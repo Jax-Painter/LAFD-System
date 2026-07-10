@@ -4,9 +4,10 @@ import {
   Events,
   GuildMember,
   PartialGuildMember,
-  TextChannel,
   EmbedBuilder,
   Colors,
+  DiscordAPIError,
+  BaseGuildTextChannel,
 } from "discord.js";
 import { logger } from "../lib/logger";
 
@@ -74,7 +75,13 @@ export function createDiscordBot(): Client | null {
       newMember: GuildMember,
     ) => {
       try {
-        const hadRole = oldMember.roles.cache.has(CADET_ROLE_ID);
+        // If old member is partial, fetch the full record so role comparison is accurate.
+        // Without this, oldMember.roles.cache may be empty and trigger false positives.
+        const resolvedOld = oldMember.partial
+          ? await oldMember.fetch()
+          : oldMember;
+
+        const hadRole = resolvedOld.roles.cache.has(CADET_ROLE_ID);
         const hasRole = newMember.roles.cache.has(CADET_ROLE_ID);
 
         // Only fire when the cadet role is newly added
@@ -85,17 +92,29 @@ export function createDiscordBot(): Client | null {
           "New cadet detected — sending congratulations",
         );
 
-        const channel = newMember.guild.channels.cache.get(
-          CADET_CHAT_CHANNEL_ID,
-        ) as TextChannel | undefined;
+        // Prefer cached channel; fall back to fetch so we don't miss non-cached channels.
+        const rawChannel =
+          newMember.guild.channels.cache.get(CADET_CHAT_CHANNEL_ID) ??
+          (await newMember.guild.channels.fetch(CADET_CHAT_CHANNEL_ID));
 
-        if (!channel) {
+        if (!rawChannel) {
           logger.error(
             { channelId: CADET_CHAT_CHANNEL_ID },
             "Cadet chat channel not found",
           );
           return;
         }
+
+        // Runtime type guard: only send if the channel can receive messages.
+        if (!rawChannel.isTextBased() || rawChannel.isDMBased()) {
+          logger.error(
+            { channelId: CADET_CHAT_CHANNEL_ID, channelType: rawChannel.type },
+            "Cadet chat channel is not a sendable text channel",
+          );
+          return;
+        }
+
+        const channel = rawChannel as BaseGuildTextChannel;
 
         const channelList = CHANNEL_INFO.map(
           (ch) => `**${ch.name}** — <#${ch.id}>\n${ch.description}`,
@@ -126,12 +145,19 @@ export function createDiscordBot(): Client | null {
           "Congratulations message sent",
         );
       } catch (err) {
-        logger.error({ err }, "Error handling guildMemberUpdate");
+        if (err instanceof DiscordAPIError) {
+          logger.error(
+            { code: err.code, status: err.status, message: err.message },
+            "Discord API error handling guildMemberUpdate",
+          );
+        } else {
+          logger.error({ err }, "Unexpected error handling guildMemberUpdate");
+        }
       }
     },
   );
 
-  client.login(token).catch((err) => {
+  client.login(token).catch((err: unknown) => {
     logger.error({ err }, "Failed to login to Discord");
   });
 
