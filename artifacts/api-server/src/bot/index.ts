@@ -42,7 +42,12 @@ const CHANNEL_INFO = [
   {
     name: "📢 Training Announcements",
     id: "1504585673854812350",
-    description: "Stay up to date with training schedules and announcements",
+    description: "Trainings will be posted here",
+  },
+  {
+    name: "📣 Academy Announcements",
+    id: "1493140023040806944",
+    description: "Updates, activity checks, and general announcements will be posted here",
   },
 ];
 
