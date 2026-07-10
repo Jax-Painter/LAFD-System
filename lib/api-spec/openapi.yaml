@@ -10,13 +10,16 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: discord
+    description: Discord server data
+  - name: config
+    description: Bot configuration
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /discord/guilds:
+    get:
+      operationId: listDiscordGuilds
+      tags: [discord]
+      summary: List all Discord servers the bot is in
+      responses:
+        "200":
+          description: List of guilds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscordGuild"
+        "503":
+          description: Bot not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /discord/channels:
+    get:
+      operationId: listDiscordChannels
+      tags: [discord]
+      summary: List text channels for a guild
+      parameters:
+        - in: query
+          name: guildId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscordChannel"
+        "503":
+          description: Bot not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /discord/roles:
+    get:
+      operationId: listDiscordRoles
+      tags: [discord]
+      summary: List roles for a guild
+      parameters:
+        - in: query
+          name: guildId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscordRole"
+        "503":
+          description: Bot not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bot/config:
+    get:
+      operationId: getBotConfig
+      tags: [config]
+      summary: Get bot configuration for a guild
+      parameters:
+        - in: query
+          name: guildId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current bot config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConfig"
+    put:
+      operationId: updateBotConfig
+      tags: [config]
+      summary: Update bot configuration for a guild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotConfigInput"
+      responses:
+        "200":
+          description: Updated config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConfig"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +155,92 @@ components:
       required:
         - status
 
+    DiscordGuild:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        iconUrl:
+          type: ["string", "null"]
+        memberCount:
+          type: number
+      required:
+        - id
+        - name
+        - iconUrl
+        - memberCount
+
+    DiscordChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: number
+        categoryName:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - type
+
+    DiscordRole:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        color:
+          type: number
+        position:
+          type: number
+      required:
+        - id
+        - name
+        - color
+        - position
+
+    BotConfig:
+      type: object
+      properties:
+        guildId:
+          type: string
+        cadetRoleId:
+          type: ["string", "null"]
+        cadetChannelId:
+          type: ["string", "null"]
+        cadetRoleName:
+          type: ["string", "null"]
+        cadetChannelName:
+          type: ["string", "null"]
+      required:
+        - guildId
+        - cadetRoleId
+        - cadetChannelId
+        - cadetRoleName
+        - cadetChannelName
+
+    BotConfigInput:
+      type: object
+      properties:
+        guildId:
+          type: string
+        cadetRoleId:
+          type: ["string", "null"]
+        cadetChannelId:
+          type: ["string", "null"]
+      required:
+        - guildId
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

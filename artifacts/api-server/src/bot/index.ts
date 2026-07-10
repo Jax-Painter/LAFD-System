@@ -10,10 +10,8 @@ import {
   BaseGuildTextChannel,
 } from "discord.js";
 import { logger } from "../lib/logger";
-
-const CADET_ROLE_ID = process.env["CADET_ROLE_ID"] ?? "1492048358767067146";
-const CADET_CHAT_CHANNEL_ID =
-  process.env["CADET_CHAT_CHANNEL_ID"] ?? "1493140035162341456";
+import { setClient } from "./client";
+import { getConfig } from "./store";
 
 const CHANNEL_INFO = [
   {
@@ -65,6 +63,7 @@ export function createDiscordBot(): Client | null {
   });
 
   client.once(Events.ClientReady, (readyClient) => {
+    setClient(client);
     logger.info({ tag: readyClient.user.tag }, "Discord bot is online");
   });
 
@@ -77,12 +76,19 @@ export function createDiscordBot(): Client | null {
       try {
         // If old member is partial, fetch the full record so role comparison is accurate.
         // Without this, oldMember.roles.cache may be empty and trigger false positives.
+        const { cadetRoleId, cadetChannelId } = getConfig(newMember.guild.id);
+
+        if (!cadetRoleId || !cadetChannelId) {
+          logger.warn("Cadet role or channel not configured — skipping");
+          return;
+        }
+
         const resolvedOld = oldMember.partial
           ? await oldMember.fetch()
           : oldMember;
 
-        const hadRole = resolvedOld.roles.cache.has(CADET_ROLE_ID);
-        const hasRole = newMember.roles.cache.has(CADET_ROLE_ID);
+        const hadRole = resolvedOld.roles.cache.has(cadetRoleId);
+        const hasRole = newMember.roles.cache.has(cadetRoleId);
 
         // Only fire when the cadet role is newly added
         if (hadRole || !hasRole) return;
@@ -94,12 +100,12 @@ export function createDiscordBot(): Client | null {
 
         // Prefer cached channel; fall back to fetch so we don't miss non-cached channels.
         const rawChannel =
-          newMember.guild.channels.cache.get(CADET_CHAT_CHANNEL_ID) ??
-          (await newMember.guild.channels.fetch(CADET_CHAT_CHANNEL_ID));
+          newMember.guild.channels.cache.get(cadetChannelId) ??
+          (await newMember.guild.channels.fetch(cadetChannelId));
 
         if (!rawChannel) {
           logger.error(
-            { channelId: CADET_CHAT_CHANNEL_ID },
+            { channelId: cadetChannelId },
             "Cadet chat channel not found",
           );
           return;
@@ -108,7 +114,7 @@ export function createDiscordBot(): Client | null {
         // Runtime type guard: only send if the channel can receive messages.
         if (!rawChannel.isTextBased() || rawChannel.isDMBased()) {
           logger.error(
-            { channelId: CADET_CHAT_CHANNEL_ID, channelType: rawChannel.type },
+            { channelId: cadetChannelId, channelType: rawChannel.type },
             "Cadet chat channel is not a sendable text channel",
           );
           return;
@@ -122,9 +128,8 @@ export function createDiscordBot(): Client | null {
 
         const embed = new EmbedBuilder()
           .setColor(Colors.Red)
-          .setTitle("🚒 Welcome to the LAFD Academy, Cadet!")
           .setDescription(
-            `Congratulations <@${newMember.user.id}>! You have officially been accepted as an **LAFD | Cadet**.\n\nWelcome to the Los Angeles Fire Department — LARPC. We're excited to have you with us. Below are the key channels you'll need to get started.`,
+            `## <:lafd:1493151973900554330> Welcome to the LAFD Academy, Cadet! <:lafd:1493151973900554330>\n\nCongratulations <@${newMember.user.id}>! You have officially been accepted as an **LAFD | Cadet**.\n\nWelcome to the Los Angeles Fire Department — LARPC. We're excited to have you with us. Below are the key channels you'll need to get started.`,
           )
           .addFields({
             name: "📌 Key Channels",
@@ -141,7 +146,7 @@ export function createDiscordBot(): Client | null {
         });
 
         logger.info(
-          { userId: newMember.user.id, channelId: CADET_CHAT_CHANNEL_ID },
+          { userId: newMember.user.id, channelId: cadetChannelId },
           "Congratulations message sent",
         );
       } catch (err) {
