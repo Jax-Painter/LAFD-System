@@ -18,3 +18,9 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+CADET_CHAT_CHANNEL_ID = "1493140035162341456"
+CADET_ROLE_ID = "1492048358767067146"
