@@ -8,6 +8,7 @@ import {
   Colors,
   DiscordAPIError,
   BaseGuildTextChannel,
+  ActivityType,
 } from "discord.js";
 import { logger } from "../lib/logger";
 import { setClient } from "./client";
@@ -69,6 +70,10 @@ export function createDiscordBot(): Client | null {
 
   client.once(Events.ClientReady, (readyClient) => {
     setClient(client);
+    readyClient.user.setPresence({
+      activities: [{ name: "LAFD | Cadets", type: ActivityType.Watching }],
+      status: "online",
+    });
     logger.info({ tag: readyClient.user.tag }, "Discord bot is online");
   });
 
