@@ -7,6 +7,9 @@ import {
   Colors,
   DiscordAPIError,
   BaseGuildTextChannel,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } from "discord.js";
 import { logger } from "../lib/logger";
 import { getConfig } from "./store";
@@ -131,8 +134,15 @@ export async function handleHostRideAlong(
   // Role ping in content so it appears above the embed and actually notifies members
   const pingContent = `<@&1492048358767067146>`;
 
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setLabel("Join Ride-Along")
+      .setURL("https://erlc.gg/join/larpc")
+      .setStyle(ButtonStyle.Link),
+  );
+
   try {
-    await channel.send({ content: pingContent, embeds: [embed] });
+    await channel.send({ content: pingContent, embeds: [embed], components: [row] });
     await interaction.reply({
       content: `Ride-along announcement posted to <#${rideAlongChannelId}>.`,
       ephemeral: true,
