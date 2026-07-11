@@ -10,11 +10,12 @@ export interface GuildConfig {
   rideAlongMessage: string;
 }
 
-const DEFAULT_RIDE_ALONG_MESSAGE = `A **Ride-Along** has been scheduled! This is your chance to experience the LAFD firsthand.
-
-Check <#1493140032012423218> for full details and submit your request in <#1493140027708801054>.
-
-Spots are **limited** — sign up early.`;
+const DEFAULT_RIDE_ALONG_MESSAGE = `Before joining make sure to check the following!
+> * You've done the Academy Exam.
+> * Make sure to check out our SOP, BLS Fire Calls Guide -> https://discord.com/channels/1492048130093486150/1493140021836775605
+> * Once in-Game make sure to wear the LAFD | Cadet uniform.
+> * Head over to briefing room and wait for the host to arrive.
+> * Use callsign RA-1 (If claimed continue with next number).`;
 
 // Default guild seeded from env vars (the LAFD LARPC server)
 const DEFAULT_GUILD_ID = "1492048130093486150";

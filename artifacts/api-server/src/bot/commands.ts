@@ -16,8 +16,12 @@ import { getConfig } from "./store";
 export const COMMANDS = [
   new SlashCommandBuilder()
     .setName("host-ride-along")
-    .setDescription(
-      "Post the ride-along announcement to the configured channel",
+    .setDescription("Post a ride-along announcement to the configured channel")
+    .addStringOption((opt) =>
+      opt
+        .setName("time")
+        .setDescription("The time of the ride-along (e.g. 3:00 PM EST)")
+        .setRequired(true),
     ),
 ].map((cmd) => cmd.toJSON());
 
@@ -67,7 +71,7 @@ export async function handleHostRideAlong(
     return;
   }
 
-  const { rideAlongChannelId, rideAlongMessage } = getConfig(guildId);
+  const { rideAlongChannelId, rideAlongMessage, cadetRoleId } = getConfig(guildId);
 
   if (!rideAlongChannelId) {
     await interaction.reply({
@@ -77,6 +81,9 @@ export async function handleHostRideAlong(
     });
     return;
   }
+
+  const time = interaction.options.getString("time", true);
+  const host = interaction.user;
 
   const rawChannel =
     interaction.guild?.channels.cache.get(rideAlongChannelId) ??
@@ -92,21 +99,34 @@ export async function handleHostRideAlong(
 
   const channel = rawChannel as BaseGuildTextChannel;
 
+  const description = [
+    `# <:lafd:1493151973900554330> LAFD Ride-Along`,
+    `A ride along is being hosted right now!`,
+    ``,
+    `**Host:** <@${host.id}>`,
+    `**Time:** ${time}`,
+    `**Server:** LARPC`,
+    ``,
+    `**Notes:** ${rideAlongMessage}`,
+  ].join("\n");
+
   const embed = new EmbedBuilder()
     .setColor(Colors.Red)
-    .setTitle("LAFD | Ride-Along Opportunity")
-    .setDescription(rideAlongMessage)
+    .setDescription(description)
     .setFooter({ text: "Los Angeles Fire Department — LARPC" })
     .setTimestamp();
 
+  // Role ping goes in content so members actually get notified
+  const pingContent = cadetRoleId ? `<@&${cadetRoleId}>` : undefined;
+
   try {
-    await channel.send({ embeds: [embed] });
+    await channel.send({ content: pingContent, embeds: [embed] });
     await interaction.reply({
       content: `Ride-along announcement posted to <#${rideAlongChannelId}>.`,
       ephemeral: true,
     });
     logger.info(
-      { guildId, channelId: rideAlongChannelId, userId: interaction.user.id },
+      { guildId, channelId: rideAlongChannelId, userId: host.id },
       "Ride-along announcement posted",
     );
   } catch (err) {
