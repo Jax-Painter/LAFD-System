@@ -116,8 +116,8 @@ export async function handleHostRideAlong(
     .setFooter({ text: "Los Angeles Fire Department — LARPC" })
     .setTimestamp();
 
-  // Role ping goes in content so members actually get notified
-  const pingContent = cadetRoleId ? `<@&${cadetRoleId}>` : undefined;
+  // Role ping in content so it appears above the embed and actually notifies members
+  const pingContent = `<@&1492048358767067146>`;
 
   try {
     await channel.send({ content: pingContent, embeds: [embed] });
