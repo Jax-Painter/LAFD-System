@@ -16,4 +16,9 @@ export interface BotConfig {
   cadetRoleName: string | null;
   /** @nullable */
   cadetChannelName: string | null;
+  /** @nullable */
+  rideAlongChannelId: string | null;
+  /** @nullable */
+  rideAlongChannelName: string | null;
+  rideAlongMessage: string;
 }

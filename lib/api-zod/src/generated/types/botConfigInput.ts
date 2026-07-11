@@ -12,4 +12,7 @@ export interface BotConfigInput {
   cadetRoleId?: string | null;
   /** @nullable */
   cadetChannelId?: string | null;
+  /** @nullable */
+  rideAlongChannelId?: string | null;
+  rideAlongMessage?: string;
 }

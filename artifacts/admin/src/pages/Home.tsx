@@ -13,7 +13,7 @@ import {
   type DiscordRole
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Shield, CheckCircle2, XCircle, Users, ChevronDown, Check, Server, Radio, ShieldAlert } from 'lucide-react';
+import { Shield, CheckCircle2, XCircle, Users, ChevronDown, Check, Server, Radio, ShieldAlert, Car, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -163,17 +163,26 @@ function ConfigSection({ guildId }: { guildId: string }) {
   );
 
   const updateConfig = useUpdateBotConfig();
+  const updateRideAlongConfig = useUpdateBotConfig();
 
   const [roleId, setRoleId] = useState<string | null>(null);
   const [channelId, setChannelId] = useState<string | null>(null);
+  
+  const [rideAlongChannelId, setRideAlongChannelId] = useState<string | null>(null);
+  const [rideAlongMessage, setRideAlongMessage] = useState<string>('');
+
+  const prevGuildId = useRef(guildId);
+  const isInitialized = useRef(false);
 
   // Sync state with server config when it loads or guild changes
-  const prevGuildId = useRef(guildId);
   useEffect(() => {
-    if (config && (!roleId || prevGuildId.current !== guildId)) {
+    if (config && (!isInitialized.current || prevGuildId.current !== guildId)) {
       setRoleId(config.cadetRoleId || null);
       setChannelId(config.cadetChannelId || null);
+      setRideAlongChannelId(config.rideAlongChannelId || null);
+      setRideAlongMessage(config.rideAlongMessage || '');
       prevGuildId.current = guildId;
+      isInitialized.current = true;
     }
   }, [config, guildId]);
 
@@ -182,7 +191,10 @@ function ConfigSection({ guildId }: { guildId: string }) {
     if (prevGuildId.current !== guildId) {
       setRoleId(null);
       setChannelId(null);
+      setRideAlongChannelId(null);
+      setRideAlongMessage('');
       prevGuildId.current = guildId;
+      isInitialized.current = false;
     }
   }, [guildId]);
 
@@ -205,7 +217,27 @@ function ConfigSection({ guildId }: { guildId: string }) {
     )
   };
 
+  const handleSaveRideAlong = () => {
+    updateRideAlongConfig.mutate(
+      { data: { guildId, rideAlongChannelId, rideAlongMessage } },
+      {
+        onSuccess: (newConfig) => {
+          toast.success('Configuration saved', {
+            description: 'Ride-Along settings updated for selected sector.'
+          });
+          queryClient.setQueryData(getGetBotConfigQueryKey({ guildId }), newConfig);
+        },
+        onError: () => {
+          toast.error('Transmission Failed', {
+            description: 'Could not update ride-along configuration.'
+          });
+        }
+      }
+    )
+  };
+
   const hasChanges = roleId !== (config?.cadetRoleId || null) || channelId !== (config?.cadetChannelId || null);
+  const hasRideAlongChanges = rideAlongChannelId !== (config?.rideAlongChannelId || null) || rideAlongMessage !== (config?.rideAlongMessage || '');
 
   // Group channels by category
   const channelsByCategory = useMemo(() => {
@@ -280,6 +312,64 @@ function ConfigSection({ guildId }: { guildId: string }) {
             className="w-full md:w-auto tracking-[0.15em] font-bold shadow-[0_0_20px_rgba(204,0,0,0.2)] hover:shadow-[0_0_25px_rgba(204,0,0,0.4)] transition-all h-12 px-8 rounded-sm"
           >
             {updateConfig.isPending ? 'SAVING...' : 'SAVE CONFIGURATION'}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card className="border-border/50 shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm relative">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/50 to-transparent" />
+        
+        <CardHeader className="border-b border-border/30 pb-6 pt-8 bg-black/20">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-primary/10 rounded-sm border border-primary/20">
+              <Car className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl uppercase tracking-[0.1em] font-bold text-foreground drop-shadow-sm">Host Ride-Along</CardTitle>
+              <CardDescription className="text-sm tracking-wide mt-1.5 opacity-80">Configure broadcast settings for ride-along availability announcements.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-8 space-y-8">
+          <div className="space-y-4">
+            <label className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
+              <Radio className="w-4 h-4 text-primary/80" /> Broadcast Channel
+            </label>
+            <ChannelCombobox channelsByCategory={channelsByCategory} value={rideAlongChannelId} onChange={setRideAlongChannelId} />
+            <p className="text-[11px] text-muted-foreground/70 tracking-wide leading-relaxed font-mono">
+              Ride-along announcements will be broadcast to this channel when a host uses /host-ride-along.
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <label className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary/80" /> Announcement Message
+            </label>
+            <textarea 
+              value={rideAlongMessage}
+              onChange={(e) => setRideAlongMessage(e.target.value)}
+              placeholder="A host is available for a ride-along! Join their VC to participate..."
+              className="w-full bg-black/40 border border-border/50 rounded-sm p-4 font-mono text-sm min-h-[140px] resize-y focus:border-primary/50 focus:outline-none transition-colors text-foreground"
+            />
+            <p className="text-[11px] text-muted-foreground/70 tracking-wide leading-relaxed font-mono">
+              The body text of the Discord embed posted during the announcement.
+            </p>
+          </div>
+        </CardContent>
+
+        <CardFooter className="px-8 py-6 bg-black/40 border-t border-border/30 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-sm font-mono text-muted-foreground tracking-wide flex items-center gap-2">
+            <div className={cn("w-2 h-2 rounded-full", hasRideAlongChanges ? "bg-amber-500 animate-pulse" : "bg-muted")} />
+            {updateRideAlongConfig.isPending ? 'TRANSMITTING DATA...' : hasRideAlongChanges ? 'UNSAVED MODIFICATIONS DETECTED' : 'CONFIGURATION SYNCHRONIZED'}
+          </div>
+          <Button 
+            onClick={handleSaveRideAlong} 
+            disabled={!hasRideAlongChanges || updateRideAlongConfig.isPending}
+            size="lg"
+            className="w-full md:w-auto tracking-[0.15em] font-bold shadow-[0_0_20px_rgba(204,0,0,0.2)] hover:shadow-[0_0_25px_rgba(204,0,0,0.4)] transition-all h-12 px-8 rounded-sm"
+          >
+            {updateRideAlongConfig.isPending ? 'SAVING...' : 'SAVE CONFIGURATION'}
           </Button>
         </CardFooter>
       </Card>

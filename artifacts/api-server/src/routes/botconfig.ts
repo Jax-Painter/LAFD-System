@@ -15,6 +15,7 @@ function resolveNames(
   guildId: string,
   cadetRoleId: string | null,
   cadetChannelId: string | null,
+  rideAlongChannelId: string | null,
 ) {
   const guild = getClient()?.guilds.cache.get(guildId);
   return {
@@ -25,6 +26,10 @@ function resolveNames(
     cadetChannelName:
       cadetChannelId && guild
         ? (guild.channels.cache.get(cadetChannelId)?.name ?? null)
+        : null,
+    rideAlongChannelName:
+      rideAlongChannelId && guild
+        ? (guild.channels.cache.get(rideAlongChannelId)?.name ?? null)
         : null,
   };
 }
@@ -38,20 +43,14 @@ router.get("/bot/config", async (req, res): Promise<void> => {
 
   const { guildId } = parsed.data;
   const cfg = getConfig(guildId);
-  const { cadetRoleName, cadetChannelName } = resolveNames(
+  const names = resolveNames(
     guildId,
     cfg.cadetRoleId,
     cfg.cadetChannelId,
+    cfg.rideAlongChannelId,
   );
 
-  res.json(
-    GetBotConfigResponse.parse({
-      guildId,
-      ...cfg,
-      cadetRoleName,
-      cadetChannelName,
-    }),
-  );
+  res.json(GetBotConfigResponse.parse({ guildId, ...cfg, ...names }));
 });
 
 router.put("/bot/config", adminAuth, async (req, res): Promise<void> => {
@@ -62,28 +61,27 @@ router.put("/bot/config", adminAuth, async (req, res): Promise<void> => {
   }
 
   const { guildId } = parsed.data;
-  const patch: Partial<Record<"cadetRoleId" | "cadetChannelId", string | null>> =
-    {};
-  if ("cadetRoleId" in parsed.data) patch.cadetRoleId = parsed.data.cadetRoleId ?? null;
+
+  const patch: Parameters<typeof updateConfig>[1] = {};
+  if ("cadetRoleId" in parsed.data)
+    patch.cadetRoleId = parsed.data.cadetRoleId ?? null;
   if ("cadetChannelId" in parsed.data)
     patch.cadetChannelId = parsed.data.cadetChannelId ?? null;
+  if ("rideAlongChannelId" in parsed.data)
+    patch.rideAlongChannelId = parsed.data.rideAlongChannelId ?? null;
+  if ("rideAlongMessage" in parsed.data && parsed.data.rideAlongMessage !== undefined)
+    patch.rideAlongMessage = parsed.data.rideAlongMessage;
 
   const updated = updateConfig(guildId, patch);
-  const { cadetRoleName, cadetChannelName } = resolveNames(
+  const names = resolveNames(
     guildId,
     updated.cadetRoleId,
     updated.cadetChannelId,
+    updated.rideAlongChannelId,
   );
 
   req.log.info({ guildId, updated }, "Bot config updated");
-  res.json(
-    UpdateBotConfigResponse.parse({
-      guildId,
-      ...updated,
-      cadetRoleName,
-      cadetChannelName,
-    }),
-  );
+  res.json(UpdateBotConfigResponse.parse({ guildId, ...updated, ...names }));
 });
 
 export default router;

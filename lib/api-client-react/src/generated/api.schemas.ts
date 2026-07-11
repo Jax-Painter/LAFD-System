@@ -42,6 +42,11 @@ export interface BotConfig {
   cadetRoleName: string | null;
   /** @nullable */
   cadetChannelName: string | null;
+  /** @nullable */
+  rideAlongChannelId: string | null;
+  /** @nullable */
+  rideAlongChannelName: string | null;
+  rideAlongMessage: string;
 }
 
 export interface BotConfigInput {
@@ -50,6 +55,9 @@ export interface BotConfigInput {
   cadetRoleId?: string | null;
   /** @nullable */
   cadetChannelId?: string | null;
+  /** @nullable */
+  rideAlongChannelId?: string | null;
+  rideAlongMessage?: string;
 }
 
 export interface ErrorResponse {

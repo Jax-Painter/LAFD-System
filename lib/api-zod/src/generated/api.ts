@@ -72,7 +72,10 @@ export const GetBotConfigResponse = zod.object({
   "cadetRoleId": zod.string().nullable(),
   "cadetChannelId": zod.string().nullable(),
   "cadetRoleName": zod.string().nullable(),
-  "cadetChannelName": zod.string().nullable()
+  "cadetChannelName": zod.string().nullable(),
+  "rideAlongChannelId": zod.string().nullable(),
+  "rideAlongChannelName": zod.string().nullable(),
+  "rideAlongMessage": zod.string()
 })
 
 
@@ -82,7 +85,9 @@ export const GetBotConfigResponse = zod.object({
 export const UpdateBotConfigBody = zod.object({
   "guildId": zod.string(),
   "cadetRoleId": zod.string().nullish(),
-  "cadetChannelId": zod.string().nullish()
+  "cadetChannelId": zod.string().nullish(),
+  "rideAlongChannelId": zod.string().nullish(),
+  "rideAlongMessage": zod.string().optional()
 })
 
 export const UpdateBotConfigResponse = zod.object({
@@ -90,7 +95,10 @@ export const UpdateBotConfigResponse = zod.object({
   "cadetRoleId": zod.string().nullable(),
   "cadetChannelId": zod.string().nullable(),
   "cadetRoleName": zod.string().nullable(),
-  "cadetChannelName": zod.string().nullable()
+  "cadetChannelName": zod.string().nullable(),
+  "rideAlongChannelId": zod.string().nullable(),
+  "rideAlongChannelName": zod.string().nullable(),
+  "rideAlongMessage": zod.string()
 })
 
 

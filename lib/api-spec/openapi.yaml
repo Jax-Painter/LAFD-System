@@ -218,12 +218,21 @@ components:
           type: ["string", "null"]
         cadetChannelName:
           type: ["string", "null"]
+        rideAlongChannelId:
+          type: ["string", "null"]
+        rideAlongChannelName:
+          type: ["string", "null"]
+        rideAlongMessage:
+          type: string
       required:
         - guildId
         - cadetRoleId
         - cadetChannelId
         - cadetRoleName
         - cadetChannelName
+        - rideAlongChannelId
+        - rideAlongChannelName
+        - rideAlongMessage
 
     BotConfigInput:
       type: object
@@ -234,6 +243,10 @@ components:
           type: ["string", "null"]
         cadetChannelId:
           type: ["string", "null"]
+        rideAlongChannelId:
+          type: ["string", "null"]
+        rideAlongMessage:
+          type: string
       required:
         - guildId
 
