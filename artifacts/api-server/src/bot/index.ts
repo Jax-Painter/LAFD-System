@@ -17,6 +17,8 @@ import { getConfig } from "./store";
 import {
   registerCommands,
   handleHostRideAlong,
+  handleAttendRideAlong,
+  ATTEND_BUTTON_ID,
   COMMANDS,
 } from "./commands";
 
@@ -95,15 +97,23 @@ export function createDiscordBot(): Client | null {
   // ─── Slash commands ──────────────────────────────────────────────────────────
 
   client.on(Events.InteractionCreate, async (interaction: Interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-
     try {
-      if (interaction.commandName === "host-ride-along") {
-        await handleHostRideAlong(interaction);
+      if (interaction.isChatInputCommand()) {
+        if (interaction.commandName === "host-ride-along") {
+          await handleHostRideAlong(interaction);
+        }
+      } else if (interaction.isButton()) {
+        if (interaction.customId === ATTEND_BUTTON_ID) {
+          await handleAttendRideAlong(interaction);
+        }
       }
     } catch (err) {
-      logger.error({ err, command: interaction.commandName }, "Unhandled command error");
-      if (!interaction.replied && !interaction.deferred) {
+      logger.error({ err }, "Unhandled interaction error");
+      if (
+        (interaction.isChatInputCommand() || interaction.isButton()) &&
+        !interaction.replied &&
+        !interaction.deferred
+      ) {
         await interaction.reply({
           content: "An unexpected error occurred.",
           ephemeral: true,
