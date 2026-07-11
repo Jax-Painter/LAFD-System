@@ -71,6 +71,18 @@ export async function handleHostRideAlong(
     return;
   }
 
+  const AUTHORIZED_ROLE_ID = "1493139720434225233";
+  const member = interaction.guild?.members.cache.get(interaction.user.id)
+    ?? await interaction.guild?.members.fetch(interaction.user.id);
+
+  if (!member?.roles.cache.has(AUTHORIZED_ROLE_ID)) {
+    await interaction.reply({
+      content: "You do not have permission to host a ride-along.",
+      ephemeral: true,
+    });
+    return;
+  }
+
   const { rideAlongChannelId, rideAlongMessage, cadetRoleId } = getConfig(guildId);
 
   if (!rideAlongChannelId) {
