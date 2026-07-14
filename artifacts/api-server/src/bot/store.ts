@@ -27,7 +27,7 @@ const configs = new Map<string, GuildConfig>([
       cadetRoleId: process.env["CADET_ROLE_ID"] ?? "1492048358767067146",
       cadetChannelId:
         process.env["CADET_CHAT_CHANNEL_ID"] ?? "1493140035162341456",
-      rideAlongChannelId: null,
+      rideAlongChannelId: process.env["RIDE_ALONG_CHANNEL_ID"] ?? "1504585673854812350",
       rideAlongMessage: DEFAULT_RIDE_ALONG_MESSAGE,
     },
   ],
