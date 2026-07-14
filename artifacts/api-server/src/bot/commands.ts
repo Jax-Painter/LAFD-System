@@ -146,6 +146,8 @@ export async function handleHostRideAlong(
     ``,
     TRAINEE_UNCLAIMED,
     ``,
+    `<:tsu_line:1494283977043869756>`.repeat(20),
+    ``,
     `**Notes:** ${rideAlongMessage}`,
   ].join("\n");
 
